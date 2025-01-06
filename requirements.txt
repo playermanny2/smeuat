@@ -1,0 +1,5 @@
+streamlit==1.31.1
+pandas==2.2.0
+plotly==5.18.0
+streamlit-js-eval==0.1.7
+openpyxl==3.1.2  # For Excel file support 
