@@ -632,212 +632,208 @@ def get_recent_runs():
 
 temp_recent_runs = get_recent_runs()
 
-# Sidebar with help
-with st.sidebar:
-    st.markdown("### 📖 Quick Guide")
-    st.markdown("""
-    1. **Upload Data**
-       - Use the Upload tab
-       - Support for CSV and Excel
-    
-    2. **Review Results**
-       - Switch to Recent Runs
-       - Filter by Run ID
-       
-    3. **Validate Categories**
-       - Select skills to review
-       - Update categorizations
-       - Provide feedback
-    """)
-    
-    st.markdown("### 🔍 Need Help?")
-    if st.button("View Documentation"):
-        st.markdown("Documentation link here")
+# Main title with subtle description
+st.title("🎯 Skill Categorization Dashboard")
+st.markdown("*Automatically categorize and validate professional skills with AI assistance*")
 
-    st.divider()
-    st.markdown("### 📊 Navigation")
-    page = st.radio(
-        "",
-        ["Dashboard", "Upload Skills", "Recent History"],
-        label_visibility="collapsed"
+# Calculate metrics from recent_runs
+total_skills = len(recent_runs)
+validated_skills = len([run for run in recent_runs if len(run['history']) > 1])
+pending_validation = total_skills - validated_skills
+changed_categories = len([run for run in recent_runs if any(h.get('action') == 'Changed' for h in run['history'])])
+validation_rate = (validated_skills / total_skills * 100) if total_skills > 0 else 0
+accuracy_rate = ((validated_skills - changed_categories) / validated_skills * 100) if validated_skills > 0 else 0
+
+# Dashboard Metrics Section
+st.markdown("""
+    <style>
+    .metric-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .metric-card {
+        flex: 1;
+        min-width: 300px;
+        background: rgba(30, 36, 51, 0.9);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid rgba(167, 66, 255, 0.2);
+        backdrop-filter: blur(10px);
+    }
+    
+    .metric-title {
+        color: #a742ff;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #fff, #e0e0e0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .metric-subtitle {
+        color: #718096;
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Metrics Row 1
+st.markdown('<div class="metric-row">', unsafe_allow_html=True)
+
+# Validation Rate with Gauge Chart
+with st.container():
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.markdown('<div class="metric-title">VALIDATION RATE</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-subtitle">{validated_skills} of {total_skills} skills validated</div>', unsafe_allow_html=True)
+    
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=validation_rate,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        gauge={
+            'axis': {'range': [0, 100], 'tickcolor': "white"},
+            'bar': {'color': "#a742ff"},
+            'bgcolor': "rgba(30, 36, 51, 0.9)",
+            'borderwidth': 2,
+            'bordercolor': "white",
+            'steps': [
+                {'range': [0, 50], 'color': 'rgba(167, 66, 255, 0.2)'},
+                {'range': [50, 80], 'color': 'rgba(167, 66, 255, 0.4)'},
+                {'range': [80, 100], 'color': 'rgba(167, 66, 255, 0.6)'}
+            ]
+        },
+        number={'suffix': "%", 'font': {'color': "white"}}
+    ))
+    fig.update_layout(
+        height=200,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font={'color': "white"}
     )
+    st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Replace the tab1/tab2 logic with page-based logic:
-if page == "Dashboard":
-    # Move all dashboard content here (metrics, charts, etc.)
-    st.title("🎯 Skill Categorization Dashboard")
-    st.markdown("*Automatically categorize and validate professional skills with AI assistance*")
-    
-    # All the metrics calculations and visualizations go here
-    # (Move the existing dashboard code here)
-    total_skills = len(recent_runs)
-    validated_skills = len([run for run in recent_runs if len(run['history']) > 1])
-    pending_validation = total_skills - validated_skills
-    changed_categories = len([run for run in recent_runs if any(h.get('action') == 'Changed' for h in run['history'])])
-    validation_rate = (validated_skills / total_skills * 100) if total_skills > 0 else 0
-    accuracy_rate = ((validated_skills - changed_categories) / validated_skills * 100) if validated_skills > 0 else 0
+# AI Accuracy Over Time
+accuracy_data = []
+for run in recent_runs:
+    changes = [h for h in run['history'] if h.get('action') == 'Changed']
+    accuracy_data.append({
+        'timestamp': datetime.strptime(run['timestamp'], "%Y-%m-%d %H:%M:%S"),
+        'accurate': len(changes) == 0
+    })
 
-    # Dashboard Metrics Section
-    st.markdown("""
-        <style>
-        .metric-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .metric-card {
-            flex: 1;
-            min-width: 300px;
-            background: rgba(30, 36, 51, 0.9);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid rgba(167, 66, 255, 0.2);
-            backdrop-filter: blur(10px);
-        }
-        
-        .metric-title {
-            color: #a742ff;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #fff, #e0e0e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .metric-subtitle {
-            color: #718096;
-            font-size: 0.8rem;
-            margin-bottom: 1rem;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+accuracy_df = pd.DataFrame(accuracy_data)
+if not accuracy_df.empty:
+    accuracy_df['cumulative_accuracy'] = (accuracy_df['accurate'].cumsum() / 
+                                        (pd.Series(range(1, len(accuracy_df) + 1))) * 100)
 
-    # Metrics Row 1
-    st.markdown('<div class="metric-row">', unsafe_allow_html=True)
-
-    # Validation Rate with Gauge Chart
     with st.container():
         st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-title">VALIDATION RATE</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-subtitle">{validated_skills} of {total_skills} skills validated</div>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-title">AI ACCURACY TREND</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-subtitle">Current accuracy: {accuracy_rate:.1f}%</div>', unsafe_allow_html=True)
         
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=validation_rate,
-            domain={'x': [0, 1], 'y': [0, 1]},
-            gauge={
-                'axis': {'range': [0, 100], 'tickcolor': "white"},
-                'bar': {'color': "#a742ff"},
-                'bgcolor': "rgba(30, 36, 51, 0.9)",
-                'borderwidth': 2,
-                'bordercolor': "white",
-                'steps': [
-                    {'range': [0, 50], 'color': 'rgba(167, 66, 255, 0.2)'},
-                    {'range': [50, 80], 'color': 'rgba(167, 66, 255, 0.4)'},
-                    {'range': [80, 100], 'color': 'rgba(167, 66, 255, 0.6)'}
-                ]
-            },
-            number={'suffix': "%", 'font': {'color': "white"}}
-        ))
-        fig.update_layout(
-            height=200,
-            margin=dict(l=10, r=10, t=10, b=10),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font={'color': "white"}
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # AI Accuracy Over Time
-    accuracy_data = []
-    for run in recent_runs:
-        changes = [h for h in run['history'] if h.get('action') == 'Changed']
-        accuracy_data.append({
-            'timestamp': datetime.strptime(run['timestamp'], "%Y-%m-%d %H:%M:%S"),
-            'accurate': len(changes) == 0
-        })
-
-    accuracy_df = pd.DataFrame(accuracy_data)
-    if not accuracy_df.empty:
-        accuracy_df['cumulative_accuracy'] = (accuracy_df['accurate'].cumsum() / 
-                                            (pd.Series(range(1, len(accuracy_df) + 1))) * 100)
-
-        with st.container():
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-            st.markdown('<div class="metric-title">AI ACCURACY TREND</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metric-subtitle">Current accuracy: {accuracy_rate:.1f}%</div>', unsafe_allow_html=True)
-            
-            fig = px.line(accuracy_df, x='timestamp', y='cumulative_accuracy',
-                         line_shape='spline')
-            fig.update_traces(line_color='#a742ff')
-            fig.update_layout(
-                height=200,
-                margin=dict(l=10, r=10, t=10, b=10),
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font={'color': "white"},
-                xaxis={'showgrid': False, 'title': None},
-                yaxis={'showgrid': True, 'gridcolor': 'rgba(255,255,255,0.1)', 
-                      'title': None, 'range': [0, 100]}
-            )
-            st.plotly_chart(fig, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # Pending Validations Pie Chart
-    with st.container():
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-title">VALIDATION STATUS</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-subtitle">{pending_validation} skills awaiting review</div>', unsafe_allow_html=True)
-        
-        fig = go.Figure(data=[go.Pie(
-            labels=['Validated', 'Pending'],
-            values=[validated_skills, pending_validation],
-            hole=.7,
-            marker=dict(colors=['#a742ff', 'rgba(167, 66, 255, 0.2)']),
-            textinfo='percent',
-            textfont=dict(color='white')
-        )])
+        fig = px.line(accuracy_df, x='timestamp', y='cumulative_accuracy',
+                     line_shape='spline')
+        fig.update_traces(line_color='#a742ff')
         fig.update_layout(
             height=200,
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             font={'color': "white"},
-            showlegend=False
+            xaxis={'showgrid': False, 'title': None},
+            yaxis={'showgrid': True, 'gridcolor': 'rgba(255,255,255,0.1)', 
+                  'title': None, 'range': [0, 100]}
         )
         st.plotly_chart(fig, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+# Pending Validations Pie Chart
+with st.container():
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.markdown('<div class="metric-title">VALIDATION STATUS</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-subtitle">{pending_validation} skills awaiting review</div>', unsafe_allow_html=True)
+    
+    fig = go.Figure(data=[go.Pie(
+        labels=['Validated', 'Pending'],
+        values=[validated_skills, pending_validation],
+        hole=.7,
+        marker=dict(colors=['#a742ff', 'rgba(167, 66, 255, 0.2)']),
+        textinfo='percent',
+        textfont=dict(color='white')
+    )])
+    fig.update_layout(
+        height=200,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font={'color': "white"},
+        showlegend=False
+    )
+    st.plotly_chart(fig, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Metrics Row 2
-    st.markdown('<div class="metric-row">', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    # Category Distribution Bar Chart
-    category_counts = {}
-    for run in recent_runs:
-        current_category = run['recommended_category']
-        category_counts[current_category] = category_counts.get(current_category, 0) + 1
+# Metrics Row 2
+st.markdown('<div class="metric-row">', unsafe_allow_html=True)
 
-    with st.container():
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-title">CATEGORY DISTRIBUTION</div>', unsafe_allow_html=True)
+# Category Distribution Bar Chart
+category_counts = {}
+for run in recent_runs:
+    current_category = run['recommended_category']
+    category_counts[current_category] = category_counts.get(current_category, 0) + 1
+
+with st.container():
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.markdown('<div class="metric-title">CATEGORY DISTRIBUTION</div>', unsafe_allow_html=True)
+    
+    fig = go.Figure(data=[go.Bar(
+        x=list(category_counts.keys()),
+        y=list(category_counts.values()),
+        marker_color='#a742ff'
+    )])
+    fig.update_layout(
+        height=200,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font={'color': "white"},
+        xaxis={'showgrid': False, 'title': None},
+        yaxis={'showgrid': True, 'gridcolor': 'rgba(255,255,255,0.1)', 'title': None}
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Recent Activity Timeline
+recent_changes = [h for run in recent_runs for h in run['history'] if h.get('action') in ['Changed', 'Validated']]
+recent_changes.sort(key=lambda x: x['timestamp'], reverse=True)
+
+with st.container():
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.markdown('<div class="metric-title">ACTIVITY TIMELINE</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric-subtitle">{len(recent_changes)} recent changes</div>', unsafe_allow_html=True)
+    
+    activity_df = pd.DataFrame(recent_changes)
+    if not activity_df.empty:
+        activity_df['timestamp'] = pd.to_datetime(activity_df['timestamp'])
+        activity_df['count'] = 1
+        activity_df = activity_df.resample('H', on='timestamp')['count'].sum().reset_index()
         
-        fig = go.Figure(data=[go.Bar(
-            x=list(category_counts.keys()),
-            y=list(category_counts.values()),
-            marker_color='#a742ff'
-        )])
+        fig = px.bar(activity_df, x='timestamp', y='count',
+                    color_discrete_sequence=['#a742ff'])
         fig.update_layout(
             height=200,
             margin=dict(l=10, r=10, t=10, b=10),
@@ -848,38 +844,13 @@ if page == "Dashboard":
             yaxis={'showgrid': True, 'gridcolor': 'rgba(255,255,255,0.1)', 'title': None}
         )
         st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Recent Activity Timeline
-    recent_changes = [h for run in recent_runs for h in run['history'] if h.get('action') in ['Changed', 'Validated']]
-    recent_changes.sort(key=lambda x: x['timestamp'], reverse=True)
+# Add tabs after the dashboard
+tab1, tab2 = st.tabs(["Categorize Skills", "Recent History"])
 
-    with st.container():
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-        st.markdown('<div class="metric-title">ACTIVITY TIMELINE</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="metric-subtitle">{len(recent_changes)} recent changes</div>', unsafe_allow_html=True)
-        
-        activity_df = pd.DataFrame(recent_changes)
-        if not activity_df.empty:
-            activity_df['timestamp'] = pd.to_datetime(activity_df['timestamp'])
-            activity_df['count'] = 1
-            activity_df = activity_df.resample('H', on='timestamp')['count'].sum().reset_index()
-            
-            fig = px.bar(activity_df, x='timestamp', y='count',
-                        color_discrete_sequence=['#a742ff'])
-            fig.update_layout(
-                height=200,
-                margin=dict(l=10, r=10, t=10, b=10),
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font={'color': "white"},
-                xaxis={'showgrid': False, 'title': None},
-                yaxis={'showgrid': True, 'gridcolor': 'rgba(255,255,255,0.1)', 'title': None}
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-elif page == "Upload Skills":
+# File Upload Tab
+with tab1:
     st.markdown("### Upload Skills Data")
     
     with st.container():
@@ -945,7 +916,8 @@ elif page == "Upload Skills":
                 # Add processing logic here
                 st.success("✅ Processing complete! View results in the Recent Runs tab.")
 
-elif page == "Recent History":
+# Recent Runs Tab
+with tab2:
     st.markdown("### Recent Categorization History")
     
     # Add search and filter functionality
@@ -1122,3 +1094,25 @@ if st.session_state.show_validation_dialog:
                 st.success(f"Category changed to {new_category}. New source: {new_source}")
         
         st.markdown('</div>', unsafe_allow_html=True)
+
+# Sidebar with help
+with st.sidebar:
+    st.markdown("### 📖 Quick Guide")
+    st.markdown("""
+    1. **Upload Data**
+       - Use the Upload tab
+       - Support for CSV and Excel
+    
+    2. **Review Results**
+       - Switch to Recent Runs
+       - Filter by Run ID
+       
+    3. **Validate Categories**
+       - Select skills to review
+       - Update categorizations
+       - Provide feedback
+    """)
+    
+    st.markdown("### 🔍 Need Help?")
+    if st.button("View Documentation"):
+        st.markdown("Documentation link here")
